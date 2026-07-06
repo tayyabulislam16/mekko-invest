@@ -1,6 +1,7 @@
 import type { HoldingView } from "@/lib/portfolio";
 import { formatPercent } from "@/lib/portfolio";
 import { colorFor } from "@/lib/colors";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 /** Per-holding target vs actual bars with over/under drift indicator. */
 export function HoldingBars({ holdings }: { holdings: HoldingView[] }) {
@@ -10,11 +11,11 @@ export function HoldingBars({ holdings }: { holdings: HoldingView[] }) {
   );
 
   return (
-    <div className="card p-5">
-      <h2 className="text-sm font-semibold text-[var(--muted)] uppercase tracking-wide">
-        Target vs actual by holding
-      </h2>
-      <div className="mt-4 space-y-4">
+    <Card>
+      <CardHeader>
+        <CardTitle>Target vs actual by holding</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
         {holdings.map((h, i) => {
           const color = colorFor(h.type, i);
           const over = h.drift > 0.05;
@@ -26,18 +27,17 @@ export function HoldingBars({ holdings }: { holdings: HoldingView[] }) {
                 <span
                   className={
                     over
-                      ? "text-[var(--danger)]"
+                      ? "text-destructive"
                       : under
-                        ? "text-[var(--primary)]"
-                        : "text-[var(--muted)]"
+                        ? "text-primary"
+                        : "text-muted-foreground"
                   }
                 >
                   {over ? "+" : ""}
                   {formatPercent(h.drift)} {over ? "over" : under ? "under" : "on target"}
                 </span>
               </div>
-              {/* Target track (light) with actual fill overlaid */}
-              <div className="relative h-5 rounded bg-[var(--background)] border border-[var(--border)]">
+              <div className="relative h-5 rounded bg-muted/50 border">
                 <div
                   className="absolute inset-y-0 left-0 rounded opacity-30"
                   style={{ width: `${(h.targetPercent / max) * 100}%`, backgroundColor: color }}
@@ -49,17 +49,17 @@ export function HoldingBars({ holdings }: { holdings: HoldingView[] }) {
                   title={`Actual ${formatPercent(h.actualPercent)}`}
                 />
               </div>
-              <div className="flex gap-4 text-xs text-[var(--muted)] mt-0.5">
+              <div className="flex gap-4 text-xs text-muted-foreground mt-0.5">
                 <span>target {formatPercent(h.targetPercent)}</span>
                 <span>actual {formatPercent(h.actualPercent)}</span>
               </div>
             </div>
           );
         })}
-      </div>
-      <p className="mt-4 text-xs text-[var(--muted)]">
-        Faded bar = target share · solid bar = actual share.
-      </p>
-    </div>
+        <p className="text-xs text-muted-foreground">
+          Faded bar = target share · solid bar = actual share.
+        </p>
+      </CardContent>
+    </Card>
   );
 }

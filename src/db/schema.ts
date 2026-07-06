@@ -29,7 +29,7 @@ export const portfolios = sqliteTable("portfolios", {
     .references(() => users.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   totalCapital: real("total_capital").notNull().default(0),
-  currency: text("currency").notNull().default("USD"),
+  currency: text("currency").notNull().default("PKR"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
 });
 

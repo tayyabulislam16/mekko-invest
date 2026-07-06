@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ArrowLeft, Plus } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
 import { getOrCreateDefaultPortfolio } from "@/lib/queries";
 import { summarize, formatPercent } from "@/lib/portfolio";
@@ -10,6 +11,17 @@ import {
   deleteHoldingAction,
 } from "@/lib/actions";
 import { AppHeader } from "@/components/AppHeader";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export default async function EditPortfolioPage() {
   const user = await getCurrentUser();
@@ -18,192 +30,209 @@ export default async function EditPortfolioPage() {
   const { portfolio, holdings } = await getOrCreateDefaultPortfolio(user.id);
   const summary = summarize(portfolio, holdings);
   const pid = portfolio.id;
+  const remaining = 100 - summary.targetPercentSum;
 
   return (
     <>
       <AppHeader email={user.email} />
       <main className="flex-1 mx-auto w-full max-w-4xl px-4 py-8 space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Edit portfolio</h1>
-          <Link href="/dashboard" className="text-sm text-[var(--primary)] hover:underline">
-            ← Back to dashboard
-          </Link>
+          <h1 className="text-2xl font-bold tracking-tight">Edit portfolio</h1>
+          <Button
+            variant="ghost"
+            size="sm"
+            nativeButton={false}
+            render={<Link href="/dashboard" />}
+          >
+            <ArrowLeft /> Back to dashboard
+          </Button>
         </div>
 
         {/* Portfolio settings */}
-        <section className="card p-5">
-          <h2 className="font-semibold mb-4">Portfolio settings</h2>
-          <form action={updateCapitalAction} className="grid sm:grid-cols-3 gap-4 items-end">
-            <input type="hidden" name="portfolioId" value={pid} />
-            <label className="block">
-              <span className="text-sm font-medium">Name</span>
-              <input
-                name="name"
-                defaultValue={portfolio.name}
-                className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2"
-              />
-            </label>
-            <label className="block">
-              <span className="text-sm font-medium">Total target capital</span>
-              <input
-                name="totalCapital"
-                type="number"
-                step="any"
-                min="0"
-                defaultValue={portfolio.totalCapital}
-                className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2"
-              />
-            </label>
-            <label className="block">
-              <span className="text-sm font-medium">Currency</span>
-              <input
-                name="currency"
-                defaultValue={portfolio.currency}
-                maxLength={3}
-                className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 uppercase"
-              />
-            </label>
-            <div className="sm:col-span-3">
-              <button className="rounded-lg bg-[var(--primary)] text-white px-4 py-2 text-sm font-medium">
-                Save settings
-              </button>
-            </div>
-          </form>
-        </section>
-
-        {/* Holdings */}
-        <section className="card p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold">Holdings</h2>
-            <span
-              className={`text-sm ${
-                summary.isBalanced ? "text-[var(--success)]" : "text-[var(--danger)]"
-              }`}
+        <Card>
+          <CardHeader>
+            <CardTitle>Portfolio settings</CardTitle>
+            <CardDescription>Name, total target capital, and currency.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form
+              action={updateCapitalAction}
+              className="grid sm:grid-cols-3 gap-4 items-end"
             >
-              Target total: {formatPercent(summary.targetPercentSum)}
-              {summary.isBalanced ? " ✓" : " (should be 100%)"}
-            </span>
-          </div>
+              <input type="hidden" name="portfolioId" value={pid} />
+              <div className="grid gap-1.5">
+                <Label htmlFor="name">Name</Label>
+                <Input id="name" name="name" defaultValue={portfolio.name} />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="totalCapital">Total target capital</Label>
+                <Input
+                  id="totalCapital"
+                  name="totalCapital"
+                  type="number"
+                  step="any"
+                  min="0"
+                  defaultValue={portfolio.totalCapital}
+                />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="currency">Currency</Label>
+                <Input
+                  id="currency"
+                  name="currency"
+                  defaultValue={portfolio.currency}
+                  maxLength={3}
+                  className="uppercase"
+                />
+              </div>
+              <div className="sm:col-span-3">
+                <Button type="submit">Save settings</Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
 
-          <div className="space-y-3">
+        {/* Ideal portfolio */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Ideal portfolio (target allocation)</CardTitle>
+            <CardDescription>
+              Define each company by name, ticker, and target %. Target should total 100%
+              (companies + cash). Enter the actual amount you&apos;ve invested to track drift.
+            </CardDescription>
+            <div className="flex items-center gap-2 pt-1">
+              <Badge variant={summary.isBalanced ? "secondary" : "destructive"}>
+                Target total: {formatPercent(summary.targetPercentSum)}
+              </Badge>
+              {summary.isBalanced ? (
+                <span className="text-sm text-success">✓ balanced at 100%</span>
+              ) : (
+                <span className="text-sm text-muted-foreground">
+                  {remaining > 0
+                    ? `${formatPercent(remaining)} left to allocate`
+                    : `${formatPercent(-remaining)} over 100%`}
+                </span>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Column headers (desktop) */}
+            <div className="hidden md:grid grid-cols-12 gap-2 px-1 text-xs font-medium text-muted-foreground">
+              <div className="col-span-4">Company</div>
+              <div className="col-span-2">Ticker</div>
+              <div className="col-span-2">Target %</div>
+              <div className="col-span-2">Actual {portfolio.currency}</div>
+              <div className="col-span-2" />
+            </div>
+
             {holdings.map((h) => (
               <form
                 key={h.id}
                 action={updateHoldingAction}
-                className="grid grid-cols-12 gap-2 items-end border-b border-[var(--border)] pb-3"
+                className="grid grid-cols-12 gap-2 items-end border-b pb-3 last:border-0"
               >
                 <input type="hidden" name="portfolioId" value={pid} />
                 <input type="hidden" name="holdingId" value={h.id} />
-                <label className="col-span-4 sm:col-span-4 block">
-                  <span className="text-xs text-[var(--muted)]">
+                <div className="col-span-6 md:col-span-4 grid gap-1">
+                  <Label className="md:hidden text-xs text-muted-foreground">
                     {h.type === "cash" ? "Cash" : "Company"}
-                  </span>
-                  <input
+                  </Label>
+                  <Input
                     name="name"
                     defaultValue={h.name}
                     readOnly={h.type === "cash"}
-                    className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 text-sm"
+                    className={h.type === "cash" ? "opacity-70" : ""}
                   />
-                </label>
-                <label className="col-span-3 sm:col-span-2 block">
-                  <span className="text-xs text-[var(--muted)]">Ticker</span>
-                  <input
+                </div>
+                <div className="col-span-6 md:col-span-2 grid gap-1">
+                  <Label className="md:hidden text-xs text-muted-foreground">Ticker</Label>
+                  <Input
                     name="ticker"
                     defaultValue={h.ticker ?? ""}
                     disabled={h.type === "cash"}
-                    className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 text-sm disabled:opacity-50"
+                    placeholder={h.type === "cash" ? "—" : ""}
                   />
-                </label>
-                <label className="col-span-2 block">
-                  <span className="text-xs text-[var(--muted)]">Target %</span>
-                  <input
+                </div>
+                <div className="col-span-4 md:col-span-2 grid gap-1">
+                  <Label className="md:hidden text-xs text-muted-foreground">Target %</Label>
+                  <Input
                     name="targetPercent"
                     type="number"
                     step="any"
                     min="0"
                     max="100"
                     defaultValue={h.targetPercent}
-                    className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 text-sm"
                   />
-                </label>
-                <label className="col-span-3 sm:col-span-2 block">
-                  <span className="text-xs text-[var(--muted)]">Actual $</span>
-                  <input
+                </div>
+                <div className="col-span-4 md:col-span-2 grid gap-1">
+                  <Label className="md:hidden text-xs text-muted-foreground">
+                    Actual {portfolio.currency}
+                  </Label>
+                  <Input
                     name="actualAmount"
                     type="number"
                     step="any"
                     min="0"
                     defaultValue={h.actualAmount}
-                    className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 text-sm"
                   />
-                </label>
-                <div className="col-span-12 sm:col-span-2 flex gap-2">
-                  <button className="rounded-lg bg-[var(--primary)] text-white px-3 py-1.5 text-sm">
+                </div>
+                <div className="col-span-4 md:col-span-2 flex gap-2">
+                  <Button type="submit" size="sm">
                     Save
-                  </button>
+                  </Button>
                   {h.type !== "cash" && (
-                    <button
+                    <Button
+                      type="submit"
+                      variant="destructive"
+                      size="sm"
                       formAction={deleteHoldingAction}
-                      className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm text-[var(--danger)]"
                     >
                       Delete
-                    </button>
+                    </Button>
                   )}
                 </div>
               </form>
             ))}
-          </div>
 
-          {/* Add new company */}
-          <form action={addHoldingAction} className="mt-5 grid grid-cols-12 gap-2 items-end">
-            <input type="hidden" name="portfolioId" value={pid} />
-            <label className="col-span-4 block">
-              <span className="text-xs text-[var(--muted)]">Add company</span>
-              <input
-                name="name"
-                placeholder="Company name"
-                required
-                className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 text-sm"
-              />
-            </label>
-            <label className="col-span-2 block">
-              <span className="text-xs text-[var(--muted)]">Ticker</span>
-              <input
-                name="ticker"
-                placeholder="AAPL"
-                className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 text-sm"
-              />
-            </label>
-            <label className="col-span-2 block">
-              <span className="text-xs text-[var(--muted)]">Target %</span>
-              <input
-                name="targetPercent"
-                type="number"
-                step="any"
-                min="0"
-                max="100"
-                defaultValue={0}
-                className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 text-sm"
-              />
-            </label>
-            <label className="col-span-2 block">
-              <span className="text-xs text-[var(--muted)]">Actual $</span>
-              <input
-                name="actualAmount"
-                type="number"
-                step="any"
-                min="0"
-                defaultValue={0}
-                className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 text-sm"
-              />
-            </label>
-            <div className="col-span-2">
-              <button className="w-full rounded-lg border border-[var(--primary)] text-[var(--primary)] px-3 py-1.5 text-sm font-medium">
-                + Add
-              </button>
-            </div>
-          </form>
-        </section>
+            {/* Add company */}
+            <form
+              action={addHoldingAction}
+              className="grid grid-cols-12 gap-2 items-end pt-2"
+            >
+              <input type="hidden" name="portfolioId" value={pid} />
+              <div className="col-span-6 md:col-span-4 grid gap-1">
+                <Label className="text-xs text-muted-foreground">Add company</Label>
+                <Input name="name" placeholder="Company name" required />
+              </div>
+              <div className="col-span-6 md:col-span-2 grid gap-1">
+                <Label className="text-xs text-muted-foreground">Ticker</Label>
+                <Input name="ticker" placeholder="AAPL" />
+              </div>
+              <div className="col-span-4 md:col-span-2 grid gap-1">
+                <Label className="text-xs text-muted-foreground">Target %</Label>
+                <Input
+                  name="targetPercent"
+                  type="number"
+                  step="any"
+                  min="0"
+                  max="100"
+                  defaultValue={0}
+                />
+              </div>
+              <div className="col-span-4 md:col-span-2 grid gap-1">
+                <Label className="text-xs text-muted-foreground">
+                  Actual {portfolio.currency}
+                </Label>
+                <Input name="actualAmount" type="number" step="any" min="0" defaultValue={0} />
+              </div>
+              <div className="col-span-4 md:col-span-2">
+                <Button type="submit" variant="outline" className="w-full">
+                  <Plus /> Add
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       </main>
     </>
   );

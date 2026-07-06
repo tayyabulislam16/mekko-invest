@@ -59,7 +59,7 @@ export function summarize(
   };
 }
 
-export function formatMoney(n: number, currency = "USD"): string {
+export function formatMoney(n: number, currency = "PKR"): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency,

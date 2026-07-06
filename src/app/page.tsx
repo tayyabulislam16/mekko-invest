@@ -1,5 +1,8 @@
 import Link from "next/link";
+import { TrendingUp } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default async function Home() {
   const user = await getCurrentUser();
@@ -7,36 +10,36 @@ export default async function Home() {
   return (
     <main className="flex-1">
       <div className="mx-auto max-w-3xl px-4 py-24 text-center">
-        <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
-          <span className="text-[var(--primary)]">Mekko</span>-Invest
+        <div className="inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1 text-sm text-muted-foreground">
+          <TrendingUp className="size-4 text-primary" />
+          Portfolio target vs actual
+        </div>
+        <h1 className="mt-6 text-4xl sm:text-5xl font-bold tracking-tight">
+          <span className="text-primary">Mekko</span>-Invest
         </h1>
-        <p className="mt-5 text-lg text-[var(--muted)]">
+        <p className="mt-5 text-lg text-muted-foreground">
           Set your target allocation across companies and cash, record what
           you&apos;ve actually invested, and see how your real portfolio compares —
           holding by holding.
         </p>
         <div className="mt-8 flex items-center justify-center gap-3">
           {user ? (
-            <Link
-              href="/dashboard"
-              className="rounded-lg bg-[var(--primary)] text-white px-5 py-2.5 font-medium"
-            >
+            <Button size="lg" nativeButton={false} render={<Link href="/dashboard" />}>
               Go to dashboard
-            </Link>
+            </Button>
           ) : (
             <>
-              <Link
-                href="/register"
-                className="rounded-lg bg-[var(--primary)] text-white px-5 py-2.5 font-medium"
-              >
+              <Button size="lg" nativeButton={false} render={<Link href="/register" />}>
                 Get started
-              </Link>
-              <Link
-                href="/login"
-                className="rounded-lg border border-[var(--border)] px-5 py-2.5 font-medium"
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                nativeButton={false}
+                render={<Link href="/login" />}
               >
                 Log in
-              </Link>
+              </Button>
             </>
           )}
         </div>
@@ -47,10 +50,12 @@ export default async function Home() {
             ["2 · Add actuals", "Enter how much you've really invested."],
             ["3 · See drift", "Mekko chart and bars show over/under vs plan."],
           ].map(([t, d]) => (
-            <div key={t} className="card p-5">
-              <div className="font-semibold">{t}</div>
-              <div className="mt-1 text-sm text-[var(--muted)]">{d}</div>
-            </div>
+            <Card key={t}>
+              <CardContent>
+                <div className="font-semibold">{t}</div>
+                <div className="mt-1 text-sm text-muted-foreground">{d}</div>
+              </CardContent>
+            </Card>
           ))}
         </div>
       </div>

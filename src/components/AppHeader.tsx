@@ -1,27 +1,42 @@
 import Link from "next/link";
+import { TrendingUp } from "lucide-react";
 import { logoutAction } from "@/lib/actions";
+import { Button } from "@/components/ui/button";
 
 export function AppHeader({ email }: { email?: string }) {
   return (
-    <header className="border-b border-[var(--border)] bg-[var(--card)]">
+    <header className="sticky top-0 z-10 border-b bg-card/80 backdrop-blur">
       <div className="mx-auto max-w-6xl px-4 h-14 flex items-center justify-between">
-        <Link href="/dashboard" className="font-semibold tracking-tight">
-          <span className="text-[var(--primary)]">Mekko</span>-Invest
+        <Link href="/dashboard" className="flex items-center gap-2 font-semibold tracking-tight">
+          <TrendingUp className="size-5 text-primary" />
+          <span>
+            <span className="text-primary">Mekko</span>-Invest
+          </span>
         </Link>
-        <nav className="flex items-center gap-4 text-sm">
-          <Link href="/dashboard" className="hover:underline">
+        <nav className="flex items-center gap-1 text-sm">
+          <Button
+            variant="ghost"
+            size="sm"
+            nativeButton={false}
+            render={<Link href="/dashboard" />}
+          >
             Dashboard
-          </Link>
-          <Link href="/portfolio/edit" className="hover:underline">
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            nativeButton={false}
+            render={<Link href="/portfolio/edit" />}
+          >
             Edit portfolio
-          </Link>
+          </Button>
           {email ? (
             <>
-              <span className="text-[var(--muted)] hidden sm:inline">{email}</span>
+              <span className="text-muted-foreground hidden sm:inline mx-2">{email}</span>
               <form action={logoutAction}>
-                <button className="rounded-md border border-[var(--border)] px-3 py-1 hover:bg-[var(--background)]">
+                <Button variant="outline" size="sm" type="submit">
                   Log out
-                </button>
+                </Button>
               </form>
             </>
           ) : null}

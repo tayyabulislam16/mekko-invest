@@ -29,6 +29,11 @@ Product spec lives in [PRD.md](PRD.md).
 ## Stack
 - **Next.js 16** (App Router, React 19, TypeScript) — Turbopack build.
 - **Tailwind CSS v4** (config-less; tokens in [src/app/globals.css](src/app/globals.css)).
+- **shadcn/ui** (Base UI variant) for layout primitives — components in
+  `src/components/ui/`, config in `components.json`, icons via `lucide-react`.
+  Add more with `npx shadcn@latest add <name>`. Note: Base UI `Button` needs
+  `nativeButton={false}` when using `render={<Link/>}`.
+- **Default currency: PKR** (see `queries.ts` seed + `formatMoney` fallback).
 - **Cloudflare Workers** deploy via `@opennextjs/cloudflare` (OpenNext).
 - **Cloudflare D1** (SQLite) + **Drizzle ORM**.
 - **Auth**: cookie sessions, PBKDF2 password hashing via Web Crypto (edge-safe).

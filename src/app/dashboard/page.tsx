@@ -8,6 +8,7 @@ import { KpiRow } from "@/components/KpiRow";
 import { MekkoChart } from "@/components/MekkoChart";
 import { HoldingBars } from "@/components/HoldingBars";
 import { SummaryTable } from "@/components/SummaryTable";
+import { Button } from "@/components/ui/button";
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
@@ -22,17 +23,14 @@ export default async function DashboardPage() {
       <main className="flex-1 mx-auto w-full max-w-6xl px-4 py-8 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">{portfolio.name}</h1>
-            <p className="text-sm text-[var(--muted)]">
+            <h1 className="text-2xl font-bold tracking-tight">{portfolio.name}</h1>
+            <p className="text-sm text-muted-foreground">
               Target vs actual allocation overview.
             </p>
           </div>
-          <Link
-            href="/portfolio/edit"
-            className="rounded-lg bg-[var(--primary)] text-white px-4 py-2 text-sm font-medium"
-          >
+          <Button nativeButton={false} render={<Link href="/portfolio/edit" />}>
             Edit portfolio
-          </Link>
+          </Button>
         </div>
 
         <KpiRow summary={summary} currency={portfolio.currency} />

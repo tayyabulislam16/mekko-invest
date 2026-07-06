@@ -1,6 +1,7 @@
 import type { HoldingView } from "@/lib/portfolio";
 import { formatPercent } from "@/lib/portfolio";
 import { colorFor } from "@/lib/colors";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 /**
  * Two side-by-side allocation columns — Target vs Actual. Each segment's height
@@ -10,11 +11,11 @@ export function MekkoChart({ holdings }: { holdings: HoldingView[] }) {
   const ordered = holdings.map((h, i) => ({ h, color: colorFor(h.type, i) }));
 
   return (
-    <div className="card p-5">
-      <h2 className="text-sm font-semibold text-[var(--muted)] uppercase tracking-wide">
-        Allocation — target vs actual
-      </h2>
-      <div className="mt-4 flex gap-6">
+    <Card>
+      <CardHeader>
+        <CardTitle>Allocation — target vs actual</CardTitle>
+      </CardHeader>
+      <CardContent className="flex gap-6">
         <Column
           title="Target"
           segments={ordered.map(({ h, color }) => ({
@@ -34,8 +35,8 @@ export function MekkoChart({ holdings }: { holdings: HoldingView[] }) {
           }))}
         />
         <Legend items={ordered.map(({ h, color }) => ({ label: h.name, color }))} />
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -49,10 +50,10 @@ function Column({
   const total = segments.reduce((s, x) => s + Math.max(0, x.pct), 0);
   return (
     <div className="flex flex-col items-center">
-      <div className="text-xs font-medium text-[var(--muted)] mb-2">{title}</div>
-      <div className="w-24 h-72 rounded-lg overflow-hidden border border-[var(--border)] flex flex-col-reverse bg-[var(--background)]">
+      <div className="text-xs font-medium text-muted-foreground mb-2">{title}</div>
+      <div className="w-24 h-72 rounded-lg overflow-hidden border flex flex-col-reverse bg-muted/40">
         {total <= 0 ? (
-          <div className="flex-1 grid place-items-center text-[10px] text-[var(--muted)] text-center px-1">
+          <div className="flex-1 grid place-items-center text-[10px] text-muted-foreground text-center px-1">
             No data
           </div>
         ) : (

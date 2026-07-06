@@ -23,7 +23,7 @@ export async function getOrCreateDefaultPortfolio(
       userId,
       name: "My Portfolio",
       totalCapital: 100000,
-      currency: "USD",
+      currency: "PKR",
       createdAt: now,
     });
     await db.insert(holdings).values({
