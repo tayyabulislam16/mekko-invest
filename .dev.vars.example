@@ -1,0 +1,4 @@
+# Copy to `.dev.vars` for local `wrangler`/OpenNext dev secrets.
+# .dev.vars is gitignored. Do NOT commit real secrets.
+
+# AUTH_SECRET="generate-a-long-random-string"
