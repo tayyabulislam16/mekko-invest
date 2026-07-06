@@ -2,6 +2,26 @@
 
 # Mekko-Invest — project guide for Claude
 
+## ⚠ Hard rules (read first)
+
+### Cloudflare account
+- **Only ever use the Cloudflare account `tayyabulislam16@gmail.com`**
+  (Account ID `6d73846e08a65a1d28ed556a1c3dab86`) for anything Cloudflare —
+  D1, Workers, Pages, deploys.
+- Before any `wrangler` command that touches the account, verify with
+  `npx wrangler whoami`. If it shows a different account, **STOP** and switch
+  (`wrangler logout` → `wrangler login`) — do not proceed on the wrong account.
+
+### Local dev server
+- The local server runs on **http://localhost:5000** (`npm run dev` → `next dev -p 5000`).
+- **Never stop, kill, or restart** a server that is already running.
+- If port 5000 (or the current active port) is busy and a new instance is truly
+  needed, **increment** the port (5001, 5002, …) — never reclaim the busy port.
+- Whenever the active port changes, **update [LOCAL_SERVER.md](LOCAL_SERVER.md)**
+  (the port registry) with the new URL and a history entry.
+
+---
+
 Portfolio target-vs-actual tracker. Users set a target allocation (companies +
 cash = 100%), record actual invested amounts, and see drift on a dashboard.
 Product spec lives in [PRD.md](PRD.md).
