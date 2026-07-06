@@ -7,7 +7,10 @@ export function AppHeader({ email }: { email?: string }) {
   return (
     <header className="sticky top-0 z-10 border-b bg-card/80 backdrop-blur">
       <div className="mx-auto max-w-6xl px-4 h-14 flex items-center justify-between">
-        <Link href="/dashboard" className="flex items-center gap-2 font-semibold tracking-tight">
+        <Link
+          href="/dashboard"
+          className="flex items-center gap-2 font-heading font-semibold tracking-tight"
+        >
           <TrendingUp className="size-5 text-primary" />
           <span>
             <span className="text-primary">Mekko</span>-Invest
