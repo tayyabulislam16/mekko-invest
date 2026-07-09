@@ -1,10 +1,18 @@
 "use client";
 
 import { useId, useState } from "react";
+import { ArrowDownWideNarrow, ArrowUpNarrowWide } from "lucide-react";
 import type { HoldingView } from "@/lib/portfolio";
 import { formatMoney, formatPercent } from "@/lib/portfolio";
 import { buildColorMap, type HoldingStyle } from "@/lib/colors";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 interface Slice {
   key: string;
@@ -24,6 +32,12 @@ type Which = "target" | "actual";
  */
 type Hover = { source: Which | "legend"; key: string };
 
+type SortDir = "desc" | "asc";
+interface Sort {
+  key: Which;
+  dir: SortDir;
+}
+
 export function AllocationDonuts({
   holdings,
   currency,
@@ -35,13 +49,28 @@ export function AllocationDonuts({
   totalCapital: number;
   actualTotal: number;
 }) {
-  const slices = buildSlices(holdings);
   const [hover, setHover] = useState<Hover | null>(null);
+  const [sort, setSort] = useState<Sort>({ key: "target", dir: "desc" });
+
+  const slices = buildSlices(holdings, sort);
+
+  /** Clicking the active column flips direction; a new column starts high→low. */
+  const sortBy = (key: Which) =>
+    setSort((s) =>
+      s.key === key
+        ? { key, dir: s.dir === "desc" ? "asc" : "desc" }
+        : { key, dir: "desc" }
+    );
 
   return (
     <Card className="overflow-visible">
       <CardHeader>
         <CardTitle>Allocation — target vs actual</CardTitle>
+        <CardAction>
+          <SortControls sort={sort} onSortBy={sortBy} onToggleDir={() =>
+            setSort((s) => ({ ...s, dir: s.dir === "desc" ? "asc" : "desc" }))
+          } />
+        </CardAction>
       </CardHeader>
       <CardContent className="flex flex-col lg:flex-row gap-8">
         <div className="flex justify-center gap-6 sm:gap-8 shrink-0">
@@ -70,35 +99,72 @@ export function AllocationDonuts({
           currency={currency}
           hover={hover}
           onHover={setHover}
+          sort={sort}
+          onSortBy={sortBy}
         />
       </CardContent>
     </Card>
   );
 }
 
-/** Companies ranked by weight, cash last. */
-function buildSlices(holdings: HoldingView[]): Slice[] {
+/** Ordered by the chosen measure; both donuts and the legend share the order. */
+function buildSlices(holdings: HoldingView[], sort: Sort): Slice[] {
   const colors = buildColorMap(holdings);
-  const toSlice = (h: HoldingView): Slice => ({
-    key: h.id,
-    label: h.name,
-    style: colors.get(h.id)!,
-    targetPercent: h.targetPercent,
-    targetAmount: h.targetAmount,
-    actualPercent: h.actualPercent,
-    actualAmount: h.actualAmount,
-  });
+  const pct = (h: HoldingView) =>
+    sort.key === "target" ? h.targetPercent : h.actualPercent;
 
-  const companies = holdings
-    .filter((h) => h.type === "company")
-    .sort(
-      (a, b) =>
-        Math.max(b.targetPercent, b.actualPercent) -
-        Math.max(a.targetPercent, a.actualPercent)
-    );
-  const cash = holdings.filter((h) => h.type === "cash");
+  return [...holdings]
+    .sort((a, b) => (sort.dir === "desc" ? pct(b) - pct(a) : pct(a) - pct(b)))
+    .map((h) => ({
+      key: h.id,
+      label: h.name,
+      style: colors.get(h.id)!,
+      targetPercent: h.targetPercent,
+      targetAmount: h.targetAmount,
+      actualPercent: h.actualPercent,
+      actualAmount: h.actualAmount,
+    }));
+}
 
-  return [...companies, ...cash].map(toSlice);
+function SortControls({
+  sort,
+  onSortBy,
+  onToggleDir,
+}: {
+  sort: Sort;
+  onSortBy: (key: Which) => void;
+  onToggleDir: () => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="text-xs text-muted-foreground">Sort by</span>
+      <div className="flex gap-0.5 rounded-lg border p-0.5">
+        {(["target", "actual"] as const).map((k) => (
+          <Button
+            key={k}
+            type="button"
+            size="xs"
+            variant={sort.key === k ? "secondary" : "ghost"}
+            aria-pressed={sort.key === k}
+            onClick={() => onSortBy(k)}
+          >
+            {k === "target" ? "Target" : "Actual"}
+          </Button>
+        ))}
+      </div>
+      <Button type="button" size="xs" variant="outline" onClick={onToggleDir}>
+        {sort.dir === "desc" ? (
+          <>
+            <ArrowDownWideNarrow /> High → Low
+          </>
+        ) : (
+          <>
+            <ArrowUpNarrowWide /> Low → High
+          </>
+        )}
+      </Button>
+    </div>
+  );
 }
 
 const SIZE = 168;
@@ -307,18 +373,26 @@ function Legend({
   currency,
   hover,
   onHover,
+  sort,
+  onSortBy,
 }: {
   slices: Slice[];
   currency: string;
   hover: Hover | null;
   onHover: (h: Hover | null) => void;
+  sort: Sort;
+  onSortBy: (key: Which) => void;
 }) {
   return (
     <ul className="flex-1 min-w-0 space-y-1" onMouseLeave={() => onHover(null)}>
       <li className="grid grid-cols-[1fr_auto_auto] gap-x-4 text-xs text-muted-foreground px-1">
         <span>Holding</span>
-        <span className="text-right w-28">Target</span>
-        <span className="text-right w-28">Actual</span>
+        <SortableHeader which="target" sort={sort} onSortBy={onSortBy}>
+          Target
+        </SortableHeader>
+        <SortableHeader which="actual" sort={sort} onSortBy={onSortBy}>
+          Actual
+        </SortableHeader>
       </li>
       {slices.map((s) => {
         const isHovered = hover?.source === "legend" && hover.key === s.key;
@@ -353,6 +427,39 @@ function Legend({
         );
       })}
     </ul>
+  );
+}
+
+/** Column header that sorts; the active column shows its direction. */
+function SortableHeader({
+  which,
+  sort,
+  onSortBy,
+  children,
+}: {
+  which: Which;
+  sort: Sort;
+  onSortBy: (key: Which) => void;
+  children: React.ReactNode;
+}) {
+  const active = sort.key === which;
+  return (
+    <button
+      type="button"
+      onClick={() => onSortBy(which)}
+      aria-sort={active ? (sort.dir === "desc" ? "descending" : "ascending") : "none"}
+      className={`w-28 flex items-center justify-end gap-1 rounded px-1 hover:text-foreground transition-colors ${
+        active ? "text-foreground font-medium" : ""
+      }`}
+    >
+      {children}
+      {active &&
+        (sort.dir === "desc" ? (
+          <ArrowDownWideNarrow className="size-3" />
+        ) : (
+          <ArrowUpNarrowWide className="size-3" />
+        ))}
+    </button>
   );
 }
 
