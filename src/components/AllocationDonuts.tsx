@@ -19,9 +19,11 @@ interface Slice {
 type Which = "target" | "actual";
 
 /**
- * Target vs actual allocation as two donuts. Every holding gets its own slice;
- * exact figures live in the hover tooltip, the legend, and the breakdown table.
+ * Which element the pointer is on. Each donut and the legend hover
+ * independently, so only the hovered one reacts — never both donuts at once.
  */
+type Hover = { source: Which | "legend"; key: string };
+
 export function AllocationDonuts({
   holdings,
   currency,
@@ -34,40 +36,40 @@ export function AllocationDonuts({
   actualTotal: number;
 }) {
   const slices = buildSlices(holdings);
-  const [hovered, setHovered] = useState<string | null>(null);
+  const [hover, setHover] = useState<Hover | null>(null);
 
   return (
-    <Card>
+    <Card className="overflow-visible">
       <CardHeader>
         <CardTitle>Allocation — target vs actual</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-5">
-        <div className="flex items-start justify-center gap-4 sm:gap-8">
+      <CardContent className="flex flex-col lg:flex-row gap-8">
+        <div className="flex justify-center gap-6 sm:gap-8 shrink-0">
           <Donut
-            title="Target"
             which="target"
+            title="Target"
             centerValue={formatMoney(totalCapital, currency)}
             slices={slices}
             currency={currency}
-            hovered={hovered}
-            onHover={setHovered}
+            hover={hover}
+            onHover={setHover}
           />
           <Donut
-            title="Actual"
             which="actual"
+            title="Actual"
             centerValue={formatMoney(actualTotal, currency)}
             slices={slices}
             currency={currency}
-            hovered={hovered}
-            onHover={setHovered}
+            hover={hover}
+            onHover={setHover}
           />
         </div>
 
         <Legend
           slices={slices}
           currency={currency}
-          hovered={hovered}
-          onHover={setHovered}
+          hover={hover}
+          onHover={setHover}
         />
       </CardContent>
     </Card>
@@ -108,21 +110,21 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 const GAP_PX = 2; // surface gap between adjacent fills
 
 function Donut({
-  title,
   which,
+  title,
   centerValue,
   slices,
   currency,
-  hovered,
+  hover,
   onHover,
 }: {
-  title: string;
   which: Which;
+  title: string;
   centerValue: string;
   slices: Slice[];
   currency: string;
-  hovered: string | null;
-  onHover: (key: string | null) => void;
+  hover: Hover | null;
+  onHover: (h: Hover | null) => void;
 }) {
   const uid = useId().replace(/:/g, "");
   const pctOf = (s: Slice) =>
@@ -130,12 +132,18 @@ function Donut({
 
   const drawable = slices.filter((s) => pctOf(s) > 0);
   const total = drawable.reduce((sum, s) => sum + pctOf(s), 0);
-  const hoveredSlice = slices.find((s) => s.key === hovered) ?? null;
+
+  // Only this donut reacts to its own pointer; a legend hover highlights the
+  // matching slice but raises no tooltip (that would put one on each donut).
+  const ownHover = hover?.source === which ? hover.key : null;
+  const linkedKey = hover?.source === "legend" ? hover.key : null;
+  const activeKey = ownHover ?? linkedKey;
+  const hoveredSlice = ownHover ? slices.find((s) => s.key === ownHover) : null;
 
   let cursor = 0;
 
   return (
-    <figure className="relative flex flex-col items-center gap-2 m-0">
+    <figure className="flex flex-col items-center gap-2 m-0">
       <figcaption className="text-xs font-medium text-muted-foreground">{title}</figcaption>
       <div className="relative" onMouseLeave={() => onHover(null)}>
         <svg
@@ -191,7 +199,8 @@ function Donut({
                 const offset = -cursor;
                 cursor += len;
 
-                const dimmed = hovered !== null && hovered !== s.key;
+                const isActive = activeKey === s.key;
+                const dimmed = activeKey !== null && !isActive;
                 const paint = s.style.hatch
                   ? `url(#hatch-${uid}-${s.key})`
                   : s.style.color;
@@ -204,12 +213,12 @@ function Donut({
                     r={RADIUS}
                     fill="none"
                     stroke={paint}
-                    strokeWidth={hovered === s.key ? STROKE + HOVER_GROWTH : STROKE}
+                    strokeWidth={isActive ? STROKE + HOVER_GROWTH : STROKE}
                     strokeDasharray={`${drawn} ${CIRCUMFERENCE - drawn}`}
                     strokeDashoffset={offset}
                     opacity={dimmed ? 0.35 : 1}
                     className="cursor-pointer transition-opacity"
-                    onMouseEnter={() => onHover(s.key)}
+                    onMouseEnter={() => onHover({ source: which, key: s.key })}
                   />
                 );
               })}
@@ -263,7 +272,7 @@ function Tooltip({
   return (
     <div
       role="tooltip"
-      className="absolute left-1/2 top-full z-20 -translate-x-1/2 translate-y-2 w-max max-w-[15rem] rounded-lg border bg-popover px-3 py-2 shadow-md pointer-events-none"
+      className="absolute left-1/2 top-full z-30 -translate-x-1/2 translate-y-2 w-max max-w-[15rem] rounded-lg border bg-popover px-3 py-2 shadow-md pointer-events-none"
     >
       <div className="flex items-center gap-2 font-medium text-sm">
         <span
@@ -296,50 +305,53 @@ function Tooltip({
 function Legend({
   slices,
   currency,
-  hovered,
+  hover,
   onHover,
 }: {
   slices: Slice[];
   currency: string;
-  hovered: string | null;
-  onHover: (key: string | null) => void;
+  hover: Hover | null;
+  onHover: (h: Hover | null) => void;
 }) {
   return (
-    <ul className="space-y-1" onMouseLeave={() => onHover(null)}>
-      <li className="grid grid-cols-[1fr_auto_auto] gap-x-4 text-xs text-muted-foreground">
+    <ul className="flex-1 min-w-0 space-y-1" onMouseLeave={() => onHover(null)}>
+      <li className="grid grid-cols-[1fr_auto_auto] gap-x-4 text-xs text-muted-foreground px-1">
         <span>Holding</span>
         <span className="text-right w-28">Target</span>
         <span className="text-right w-28">Actual</span>
       </li>
-      {slices.map((s) => (
-        <li
-          key={s.key}
-          onMouseEnter={() => onHover(s.key)}
-          className={`grid grid-cols-[1fr_auto_auto] gap-x-4 items-center text-sm rounded px-1 py-0.5 transition-colors ${
-            hovered === s.key ? "bg-muted" : ""
-          } ${hovered !== null && hovered !== s.key ? "opacity-60" : ""}`}
-        >
-          <span className="flex items-center gap-2 min-w-0">
-            <span
-              className="inline-block h-3 w-3 rounded-sm shrink-0"
-              style={swatchStyle(s.style)}
-            />
-            <span className="truncate">{s.label}</span>
-          </span>
-          <span className="text-right tabular-nums w-28">
-            {formatPercent(s.targetPercent)}
-            <span className="block text-[11px] text-muted-foreground">
-              {formatMoney(s.targetAmount, currency)}
+      {slices.map((s) => {
+        const isHovered = hover?.source === "legend" && hover.key === s.key;
+        return (
+          <li
+            key={s.key}
+            onMouseEnter={() => onHover({ source: "legend", key: s.key })}
+            className={`grid grid-cols-[1fr_auto_auto] gap-x-4 items-center text-sm rounded px-1 py-0.5 transition-colors ${
+              isHovered ? "bg-muted" : ""
+            }`}
+          >
+            <span className="flex items-center gap-2 min-w-0">
+              <span
+                className="inline-block h-3 w-3 rounded-sm shrink-0"
+                style={swatchStyle(s.style)}
+              />
+              <span className="truncate">{s.label}</span>
             </span>
-          </span>
-          <span className="text-right tabular-nums w-28">
-            {formatPercent(s.actualPercent)}
-            <span className="block text-[11px] text-muted-foreground">
-              {formatMoney(s.actualAmount, currency)}
+            <span className="text-right tabular-nums w-28">
+              {formatPercent(s.targetPercent)}
+              <span className="block text-[11px] text-muted-foreground">
+                {formatMoney(s.targetAmount, currency)}
+              </span>
             </span>
-          </span>
-        </li>
-      ))}
+            <span className="text-right tabular-nums w-28">
+              {formatPercent(s.actualPercent)}
+              <span className="block text-[11px] text-muted-foreground">
+                {formatMoney(s.actualAmount, currency)}
+              </span>
+            </span>
+          </li>
+        );
+      })}
     </ul>
   );
 }
