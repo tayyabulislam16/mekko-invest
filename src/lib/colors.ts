@@ -1,11 +1,16 @@
 /**
  * Categorical palette for holdings.
  *
- * These six hues are the validated categorical set (lightness band, chroma floor,
- * and colorblind separation all pass; worst adjacent CVD ΔE 24.2 on light).
- * Two slots sit under 3:1 contrast on the light surface, so every chart using
- * them must ship direct labels or a table view — both are present on the
- * dashboard (donut legend + breakdown table).
+ * These eight hues are the validated categorical set (lightness band, chroma
+ * floor and colourblind separation all pass; worst adjacent CVD ΔE 24.2 on the
+ * light surface). Three slots sit under 3:1 contrast against the surface, so
+ * every chart that uses them must ship direct labels or a table view — the
+ * dashboard has both (donut legend + breakdown table).
+ *
+ * Past eight holdings we never invent a ninth hue (a generated hue is
+ * indistinguishable from an existing one under CVD). Instead the palette wraps
+ * and the repeated hue is marked with a diagonal hatch, so identity is carried
+ * by hue x texture rather than hue alone.
  *
  * Cash is deliberately a de-emphasis neutral, not a categorical slot: it is the
  * "not deployed into equities" bucket, and reading gray is the point.
@@ -17,13 +22,17 @@ const CATEGORICAL = [
   "#008300", // green
   "#4a3aa7", // violet
   "#e34948", // red
+  "#e87ba4", // magenta
+  "#eb6834", // orange
 ];
 
 export const CASH_COLOR = "#94a3b8";
-export const OTHER_COLOR = "#64748b";
 
-/** Donuts stay legible only at a small segment count; the tail folds into "Other". */
-export const MAX_DONUT_COMPANIES = 5;
+export interface HoldingStyle {
+  color: string;
+  /** True when the hue is a repeat and needs texture to stay distinguishable. */
+  hatch: boolean;
+}
 
 export interface ColorableHolding {
   id: string;
@@ -31,18 +40,23 @@ export interface ColorableHolding {
 }
 
 /**
- * Colour follows the entity, not its rank: a holding keeps its hue regardless of
- * where it sorts in a given chart. Companies take categorical slots in list
- * order; cash always takes the neutral.
+ * Colour follows the entity, not its rank: a holding keeps its hue wherever it
+ * sorts. Companies take categorical slots in list order; cash always takes the
+ * neutral.
  */
-export function buildColorMap(holdings: ColorableHolding[]): Map<string, string> {
-  const map = new Map<string, string>();
+export function buildColorMap(
+  holdings: ColorableHolding[]
+): Map<string, HoldingStyle> {
+  const map = new Map<string, HoldingStyle>();
   let slot = 0;
   for (const h of holdings) {
     if (h.type === "cash") {
-      map.set(h.id, CASH_COLOR);
+      map.set(h.id, { color: CASH_COLOR, hatch: false });
     } else {
-      map.set(h.id, CATEGORICAL[slot % CATEGORICAL.length]);
+      map.set(h.id, {
+        color: CATEGORICAL[slot % CATEGORICAL.length],
+        hatch: slot >= CATEGORICAL.length,
+      });
       slot++;
     }
   }

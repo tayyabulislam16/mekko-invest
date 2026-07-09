@@ -48,7 +48,7 @@ export function SummaryTable({
                     <span className="inline-flex items-center gap-2">
                       <span
                         className="h-2.5 w-2.5 rounded-sm"
-                        style={{ backgroundColor: colors.get(h.id) }}
+                        style={{ backgroundColor: colors.get(h.id)?.color }}
                       />
                       {h.name}
                       {h.ticker ? (

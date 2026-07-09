@@ -18,7 +18,7 @@ export function HoldingBars({ holdings }: { holdings: HoldingView[] }) {
       </CardHeader>
       <CardContent className="space-y-4">
         {holdings.map((h) => {
-          const color = colors.get(h.id)!;
+          const color = colors.get(h.id)!.color;
           const over = h.drift > 0.05;
           const under = h.drift < -0.05;
           return (
