@@ -22,5 +22,6 @@ Any agent/dev MUST read and update this file before starting a server.
 
 ## History
 <!-- newest first: YYYY-MM-DD — port — note -->
+- 2026-07-08 — 5000 — restarted after prior instance exited; port free, reused 5000, HTTP 200
 - 2026-07-06 — 5000 — dev server started (`npm run dev`), routes 200 OK
 - 2026-07-06 — 5000 — initial registry created (server not yet started)

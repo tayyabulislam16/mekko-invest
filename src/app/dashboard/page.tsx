@@ -5,7 +5,7 @@ import { getOrCreateDefaultPortfolio } from "@/lib/queries";
 import { summarize } from "@/lib/portfolio";
 import { AppHeader } from "@/components/AppHeader";
 import { KpiRow } from "@/components/KpiRow";
-import { MekkoChart } from "@/components/MekkoChart";
+import { AllocationDonuts } from "@/components/AllocationDonuts";
 import { HoldingBars } from "@/components/HoldingBars";
 import { SummaryTable } from "@/components/SummaryTable";
 import { Button } from "@/components/ui/button";
@@ -36,7 +36,12 @@ export default async function DashboardPage() {
         <KpiRow summary={summary} currency={portfolio.currency} />
 
         <div className="grid lg:grid-cols-2 gap-6">
-          <MekkoChart holdings={summary.holdings} />
+          <AllocationDonuts
+            holdings={summary.holdings}
+            currency={portfolio.currency}
+            totalCapital={summary.totalCapital}
+            actualTotal={summary.actualTotal}
+          />
           <HoldingBars holdings={summary.holdings} />
         </div>
 

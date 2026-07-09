@@ -1,10 +1,11 @@
 import type { HoldingView } from "@/lib/portfolio";
 import { formatPercent } from "@/lib/portfolio";
-import { colorFor } from "@/lib/colors";
+import { buildColorMap } from "@/lib/colors";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 /** Per-holding target vs actual bars with over/under drift indicator. */
 export function HoldingBars({ holdings }: { holdings: HoldingView[] }) {
+  const colors = buildColorMap(holdings);
   const max = Math.max(
     10,
     ...holdings.map((h) => Math.max(h.targetPercent, h.actualPercent))
@@ -16,8 +17,8 @@ export function HoldingBars({ holdings }: { holdings: HoldingView[] }) {
         <CardTitle>Target vs actual by holding</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {holdings.map((h, i) => {
-          const color = colorFor(h.type, i);
+        {holdings.map((h) => {
+          const color = colors.get(h.id)!;
           const over = h.drift > 0.05;
           const under = h.drift < -0.05;
           return (

@@ -138,6 +138,14 @@ export async function deleteHoldingAction(formData: FormData): Promise<void> {
   if (!p) redirect("/dashboard");
 
   const db = await getDb();
+  // The cash line is structural — the UI hides its delete button, but the action
+  // must enforce it too, or a crafted POST removes the portfolio's cash bucket.
+  const holding = await db.query.holdings.findFirst({
+    where: eq(holdings.id, holdingId),
+  });
+  if (!holding || holding.portfolioId !== portfolioId || holding.type === "cash") {
+    redirect("/portfolio/edit");
+  }
   await db.delete(holdings).where(eq(holdings.id, holdingId));
 
   revalidatePath("/dashboard");

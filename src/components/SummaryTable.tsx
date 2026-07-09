@@ -1,6 +1,6 @@
 import type { PortfolioSummary } from "@/lib/portfolio";
 import { formatMoney, formatPercent } from "@/lib/portfolio";
-import { colorFor } from "@/lib/colors";
+import { buildColorMap } from "@/lib/colors";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -19,6 +19,7 @@ export function SummaryTable({
   summary: PortfolioSummary;
   currency: string;
 }) {
+  const colors = buildColorMap(summary.holdings);
   return (
     <Card>
       <CardHeader>
@@ -38,7 +39,7 @@ export function SummaryTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {summary.holdings.map((h, i) => {
+            {summary.holdings.map((h) => {
               const over = h.drift > 0.05;
               const under = h.drift < -0.05;
               return (
@@ -47,7 +48,7 @@ export function SummaryTable({
                     <span className="inline-flex items-center gap-2">
                       <span
                         className="h-2.5 w-2.5 rounded-sm"
-                        style={{ backgroundColor: colorFor(h.type, i) }}
+                        style={{ backgroundColor: colors.get(h.id) }}
                       />
                       {h.name}
                       {h.ticker ? (
