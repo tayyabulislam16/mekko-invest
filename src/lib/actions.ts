@@ -93,6 +93,13 @@ export async function addHoldingAction(formData: FormData): Promise<void> {
   if (!p) redirect("/dashboard");
 
   const db = await getDb();
+  // Append to the end of the user's chosen order rather than to a clock value.
+  const existing = await db.query.holdings.findMany({
+    where: eq(holdings.portfolioId, portfolioId),
+  });
+  const nextOrder =
+    existing.reduce((max, h) => Math.max(max, h.sortOrder), -1) + 10;
+
   await db.insert(holdings).values({
     id: newId(),
     portfolioId,
@@ -101,8 +108,43 @@ export async function addHoldingAction(formData: FormData): Promise<void> {
     ticker: String(formData.get("ticker") ?? "").trim() || null,
     targetPercent: Number(formData.get("targetPercent") ?? 0) || 0,
     actualAmount: Number(formData.get("actualAmount") ?? 0) || 0,
-    sortOrder: Date.now() % 1_000_000,
+    sortOrder: nextOrder,
   });
+
+  revalidatePath("/dashboard");
+  revalidatePath("/portfolio/edit");
+}
+
+/**
+ * Persist a drag-and-drop reorder. Ids that don't belong to this portfolio are
+ * ignored, so a crafted call can't touch another user's rows.
+ */
+export async function reorderHoldingsAction(
+  portfolioId: string,
+  orderedIds: string[]
+): Promise<void> {
+  const user = await requireUser();
+  const p = await getPortfolioForUser(portfolioId, user.id);
+  if (!p) return;
+
+  const db = await getDb();
+  const owned = new Set(
+    (
+      await db.query.holdings.findMany({
+        where: eq(holdings.portfolioId, portfolioId),
+      })
+    ).map((h) => h.id)
+  );
+
+  let position = 0;
+  for (const id of orderedIds) {
+    if (!owned.has(id)) continue;
+    await db
+      .update(holdings)
+      .set({ sortOrder: position * 10 })
+      .where(eq(holdings.id, id));
+    position++;
+  }
 
   revalidatePath("/dashboard");
   revalidatePath("/portfolio/edit");
